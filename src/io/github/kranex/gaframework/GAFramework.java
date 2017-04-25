@@ -38,8 +38,10 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 /**
- * @author oli
- *
+ * @author Oliver Strik oliverstrik@gmail.com
+ * 
+ * @version v0.1.0
+ * @since v0.1.0
  */
 public class GAFramework {
 
@@ -85,7 +87,7 @@ public class GAFramework {
 
 			/* starts the GASolver program. */
 			new GAFramework(new File(args[0]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
-			
+
 			debug("closing database connection...");
 			/* shuts down the database. */
 			database.close();
@@ -96,15 +98,17 @@ public class GAFramework {
 		}
 	}
 
-	/** 
-	 * Creates a database connection object.
-	 * Loads the embedded driver, starts and connects to database using the connection URL
-	 * Generated via the given database folder.
+	/**
+	 * Creates a database connection object. Loads the embedded driver, starts
+	 * and connects to database using the connection URL Generated via the given
+	 * database folder.
 	 * 
-	 * @param db the database folder
+	 * @param db
+	 *            the database folder
 	 * @return
 	 * @throws SQLException
 	 * @throws ClassNotFoundException
+	 * @since v0.1.0
 	 */
 	public static Connection createDatabaseConnection(String db) throws SQLException, ClassNotFoundException {
 		String driver = "org.apache.derby.jdbc.EmbeddedDriver";
@@ -126,34 +130,44 @@ public class GAFramework {
 	 * @throws ScriptException
 	 * @throws SQLException
 	 * @throws NoSuchMethodException
+	 * @since v0.1.0
 	 */
 	public GAFramework(File file, int itter, int poolSize)
 			throws FileNotFoundException, ScriptException, SQLException, NoSuchMethodException {
-		
+
 		/* calls the javascript initalisation method. */
 		initScriptEngine(file);
-		
-		/* init method not explicitly required, so try it and ignore if nothing happens. */
+
+		/*
+		 * init method not explicitly required, so try it and ignore if nothing
+		 * happens.
+		 */
 		try {
 			inv.invokeFunction("init");
 		} catch (NoSuchMethodException e) {
 			debug("no init method...");
 		}
-		
+
 		/* invoke the initPool function. */
 		inv.invokeFunction("initPool", poolSize);
-		
+
 		for (int i = 0; i < itter; i++) {
-			/* invoke breed and mutate functions, also break if the script calls for it */
+			/*
+			 * invoke breed and mutate functions, also break if the script calls
+			 * for it
+			 */
 			inv.invokeFunction("breed");
 			inv.invokeFunction("mutate");
 			if (BREAK) {
 				break;
 			}
 		}
-		/* invoke the output function to output the final solution or other stuff as required */
+		/*
+		 * invoke the output function to output the final solution or other
+		 * stuff as required
+		 */
 		inv.invokeFunction("output");
-		
+
 		// Statement statement = database.createStatement();
 		// ResultSet table = statement.executeQuery("SELECT * FROM CITIES");
 		// table.get
@@ -166,19 +180,22 @@ public class GAFramework {
 	 *            javascript genetic script.
 	 * @throws FileNotFoundException
 	 * @throws ScriptException
+	 * @since v0.1.0
 	 */
 	private void initScriptEngine(File file) throws FileNotFoundException, ScriptException {
 		debug("init script engine");
 		ScriptEngineManager sem = new ScriptEngineManager();
 		engine = sem.getEngineByName("JavaScript");
-		
-		/* add the variables BREAK and database to the Scripts global variables. 
-		 * This is a link of sorts. changes made here affect the variables in 
-		 * the Script, changes to the variables in the Script affect the variables
-		 * here.*/
+
+		/*
+		 * add the variables BREAK and database to the Scripts global variables.
+		 * This is a link of sorts. changes made here affect the variables in
+		 * the Script, changes to the variables in the Script affect the
+		 * variables here.
+		 */
 		engine.put("BREAK", BREAK);
 		engine.put("db", database);
-		
+
 		engine.eval(new FileReader(file));
 		inv = (Invocable) engine;
 	}
@@ -188,6 +205,7 @@ public class GAFramework {
 	 * 
 	 * @param string
 	 *            debug message to output.
+	 * @since v0.1.0
 	 */
 	private static void debug(String string) {
 		if (DEBUG) {
@@ -200,6 +218,7 @@ public class GAFramework {
 	 * 
 	 * @param string
 	 *            message to output.
+	 * @since v0.1.0
 	 */
 	@SuppressWarnings("unused")
 	private static void verbose(String string) {
@@ -210,6 +229,8 @@ public class GAFramework {
 
 	/**
 	 * Outputs the Help Text.
+	 * 
+	 * @since v0.1.0
 	 */
 	public static void printHelp() {
 		System.out.println("GAFramework <Framework Script> <Database> <Generations> <Chromosomes/Pool>");
