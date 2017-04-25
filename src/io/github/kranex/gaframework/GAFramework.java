@@ -43,21 +43,21 @@ import javax.script.ScriptException;
  */
 public class GAFramework {
 
-	// constants for debugging and verbose output;
+	/* constants for debugging and verbose output. */
 	public static final boolean VERBOSE = true;
 	public static final boolean DEBUG = true;
 
-	// declarations for the javascript engine;
+	/* declarations for the javascript engine. */
 	private static ScriptEngine engine;
 	private static Invocable inv;
 
-	// declaration for the database;
+	/* declaration for the database. */
 	private static Connection database;
 
-	// initalisation of the framework script break boolean;
+	/* initialization of the framework script break boolean. */
 	private boolean BREAK = false;
 
-	// start of the java program;
+	/* start of the java program. */
 	public static void main(String[] args) throws NumberFormatException, FileNotFoundException, ScriptException,
 			ClassNotFoundException, SQLException, NoSuchMethodException {
 		System.out.println("GAFramework  Copyright (C) 2017 Oliver Strik");
@@ -80,23 +80,31 @@ public class GAFramework {
 			break;
 		}
 		try {
-			// init database;
+			/* initialize database. */
 			database = createDatabaseConnection(args[1]);
 
-			// starts the GASolver program;
+			/* starts the GASolver program. */
 			new GAFramework(new File(args[0]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+			
 			debug("closing database connection...");
+			/* shuts down the database. */
 			database.close();
 		} catch (ArrayIndexOutOfBoundsException e) {
+			/* this happens if not enough arguments are given to the program. */
 			System.out.println("[ERROR] Not enough arguments. Usage:");
 			printHelp();
 		}
 	}
 
-	/*
-	 * TODO desc createDatabaseConnection The method creates a Connection
-	 * object. Loads the embedded driver, starts and connects to the database
-	 * using the connection URL.
+	/** 
+	 * Creates a database connection object.
+	 * Loads the embedded driver, starts and connects to database using the connection URL
+	 * Generated via the given database folder.
+	 * 
+	 * @param db the database folder
+	 * @return
+	 * @throws SQLException
+	 * @throws ClassNotFoundException
 	 */
 	public static Connection createDatabaseConnection(String db) throws SQLException, ClassNotFoundException {
 		String driver = "org.apache.derby.jdbc.EmbeddedDriver";
@@ -106,7 +114,7 @@ public class GAFramework {
 	}
 
 	/**
-	 * Start of the GASolver Program.
+	 * Start of the GAFramework Program.
 	 * 
 	 * @param file
 	 *            javascript genetic script.
@@ -121,22 +129,31 @@ public class GAFramework {
 	 */
 	public GAFramework(File file, int itter, int poolSize)
 			throws FileNotFoundException, ScriptException, SQLException, NoSuchMethodException {
-		// calls the javascript initalisation method.
+		
+		/* calls the javascript initalisation method. */
 		initScriptEngine(file);
+		
+		/* init method not explicitly required, so try it and ignore if nothing happens. */
 		try {
 			inv.invokeFunction("init");
 		} catch (NoSuchMethodException e) {
 			debug("no init method...");
 		}
+		
+		/* invoke the initPool function. */
 		inv.invokeFunction("initPool", poolSize);
+		
 		for (int i = 0; i < itter; i++) {
+			/* invoke breed and mutate functions, also break if the script calls for it */
 			inv.invokeFunction("breed");
 			inv.invokeFunction("mutate");
 			if (BREAK) {
 				break;
 			}
 		}
+		/* invoke the output function to output the final solution or other stuff as required */
 		inv.invokeFunction("output");
+		
 		// Statement statement = database.createStatement();
 		// ResultSet table = statement.executeQuery("SELECT * FROM CITIES");
 		// table.get
@@ -154,7 +171,14 @@ public class GAFramework {
 		debug("init script engine");
 		ScriptEngineManager sem = new ScriptEngineManager();
 		engine = sem.getEngineByName("JavaScript");
+		
+		/* add the variables BREAK and database to the Scripts global variables. 
+		 * This is a link of sorts. changes made here affect the variables in 
+		 * the Script, changes to the variables in the Script affect the variables
+		 * here.*/
+		engine.put("BREAK", BREAK);
 		engine.put("db", database);
+		
 		engine.eval(new FileReader(file));
 		inv = (Invocable) engine;
 	}
@@ -184,6 +208,9 @@ public class GAFramework {
 		}
 	}
 
+	/**
+	 * Outputs the Help Text.
+	 */
 	public static void printHelp() {
 		System.out.println("GAFramework <Framework Script> <Database> <Generations> <Chromosomes/Pool>");
 	}
