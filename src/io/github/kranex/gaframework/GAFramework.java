@@ -27,66 +27,84 @@ package io.github.kranex.gaframework;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.IOException;
 import java.sql.Connection;
-import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
-import javax.script.Invocable;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
+import io.github.kranex.gaframework.database.DatabaseUtils;
+import io.github.kranex.gaframework.engine.Engine;
 
 /**
  * @author Oliver Strik oliverstrik@gmail.com
  * 
- * @version v0.1.0
+ * @version v0.2.0
  * @since v0.1.0
  */
 public class GAFramework {
 
 	/* constants for debugging and verbose output. */
-	public static final boolean VERBOSE = true;
-	public static final boolean DEBUG = true;
+	public static boolean VERBOSE = true;
+	public static boolean DEBUG = false;
 
-	/* declarations for the javascript engine. */
-	private static ScriptEngine engine;
-	private static Invocable inv;
-
+	private static Engine engine;
 	/* declaration for the database. */
-	private static Connection database;
+	public static Connection database;
 
 	/* initialization of the framework script break boolean. */
-	private boolean BREAK = false;
+	public static boolean BREAK = false;
 
 	/* start of the java program. */
-	public static void main(String[] args) throws NumberFormatException, FileNotFoundException, ScriptException,
-			ClassNotFoundException, SQLException, NoSuchMethodException {
-		System.out.println("GAFramework  Copyright (C) 2017 Oliver Strik");
-		System.out.println("This program comes with ABSOLUTELY NO WARRANTY; for details type `GAFramework -w'.");
-		System.out.println(
-				"This is free software, and you are welcome to redistribute it under certain conditions; type `GAFramework -c' for details.\n");
-		switch (args[0]) {
-		case "-w":
-			System.out.println(
-					"This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.");
-			return;
-		case "-c":
-			System.out.println(
-					"This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.");
-			return;
-		case "-h":
-			printHelp();
-			return;
-		default:
-			break;
+	public static void main(String[] args) throws NumberFormatException, ScriptException,
+			ClassNotFoundException, SQLException, NoSuchMethodException, IOException {
+		
+		/* Deal with arguments */
+		List<String> arguments = new LinkedList<String>(Arrays.asList(args));
+		List<Integer> remove = new ArrayList<Integer>();
+		if(!arguments.contains("-q"))printLicense();
+		for (int i = 0; i < arguments.size(); i++) {
+			switch (arguments.get(i)) {
+			case "-w":
+				System.out.println(
+						"This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.");
+				return;
+			case "-c":
+				System.out.println(
+						"This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.");
+				return;
+			case "-h":
+				printHelp();
+				return;
+			case "-q":
+				VERBOSE = false;
+				break;
+			case "-d":
+				DEBUG = true;
+				debug("enabled.");
+				break;
+			default:
+				continue;
+			}
+			debug("removing argument: " + arguments.get(i));
+			remove.add(i);
+		}
+		for(int i : remove){
+			arguments.remove(i);
 		}
 		try {
 			/* initialize database. */
-			database = createDatabaseConnection(args[1]);
-
+			debug("starting database...");
+			database = DatabaseUtils.createDatabaseConnection(arguments.get(1));
 			/* starts the GASolver program. */
-			new GAFramework(new File(args[0]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
+			verbose("Initalising GAFramework...");
+			new GAFramework(new File(arguments.get(0)), Integer.parseInt(arguments.get(2)), Integer.parseInt(arguments.get(3)));
 
 			debug("closing database connection...");
 			/* shuts down the database. */
@@ -99,25 +117,6 @@ public class GAFramework {
 	}
 
 	/**
-	 * Creates a database connection object. Loads the embedded driver, starts
-	 * and connects to database using the connection URL Generated via the given
-	 * database folder.
-	 * 
-	 * @param db
-	 *            the database folder
-	 * @return
-	 * @throws SQLException
-	 * @throws ClassNotFoundException
-	 * @since v0.1.0
-	 */
-	public static Connection createDatabaseConnection(String db) throws SQLException, ClassNotFoundException {
-		String driver = "org.apache.derby.jdbc.EmbeddedDriver";
-		Class.forName(driver);
-		String url = "jdbc:derby:" + db;
-		return DriverManager.getConnection(url);
-	}
-
-	/**
 	 * Start of the GAFramework Program.
 	 * 
 	 * @param file
@@ -126,38 +125,62 @@ public class GAFramework {
 	 *            # of iterations.
 	 * @param poolSize
 	 *            # of chromosomes in the pool.
-	 * @throws FileNotFoundException
 	 * @throws ScriptException
 	 * @throws SQLException
 	 * @throws NoSuchMethodException
+	 * @throws IOException 
 	 * @since v0.1.0
 	 */
 	public GAFramework(File file, int itter, int poolSize)
-			throws FileNotFoundException, ScriptException, SQLException, NoSuchMethodException {
+			throws ScriptException, SQLException, NoSuchMethodException, IOException {
 
 		/* calls the javascript initalisation method. */
-		initScriptEngine(file);
-
+		engine = new Engine(file);
+		
 		/*
 		 * init method not explicitly required, so try it and ignore if nothing
 		 * happens.
 		 */
 		try {
-			inv.invokeFunction("init");
+			engine.inv.invokeFunction("init");
 		} catch (NoSuchMethodException e) {
-			debug("no init method...");
+			debug("No init function...");
 		}
 
 		/* invoke the initPool function. */
-		inv.invokeFunction("initPool", poolSize);
-
+		engine.inv.invokeFunction("initPool", poolSize);
+		boolean debugElite = true;
 		for (int i = 0; i < itter; i++) {
+			if(itter >=20){
+				if(i%(itter/20) == 0){
+					if(VERBOSE){
+							System.out.print("\r" + ((int)((((double)i)/(double)itter)*100.0) + "% "));
+					}
+				}
+			}
 			/*
 			 * invoke breed and mutate functions, also break if the script calls
-			 * for it
+			 * for it.
+			 * 
+			 * the try catches are there because some methods are optional.
+			 * 
+			 * If a loop method is not found, then do the default order.
+			 * 
 			 */
-			inv.invokeFunction("breed");
-			inv.invokeFunction("mutate");
+			try {
+				engine.inv.invokeFunction("loop", i);
+			} catch (NoSuchMethodException e) {
+				engine.inv.invokeFunction("breed");
+				engine.inv.invokeFunction("mutate");
+				try {
+					engine.inv.invokeFunction("elite");
+				} catch (NoSuchMethodException ex) {
+					if (debugElite) {
+						debug("No elite function...");
+						debugElite = false;
+					}
+				}
+			}
 			if (BREAK) {
 				break;
 			}
@@ -166,38 +189,8 @@ public class GAFramework {
 		 * invoke the output function to output the final solution or other
 		 * stuff as required
 		 */
-		inv.invokeFunction("output");
-
-		// Statement statement = database.createStatement();
-		// ResultSet table = statement.executeQuery("SELECT * FROM CITIES");
-		// table.get
-	}
-
-	/**
-	 * javascript engine init method.
-	 * 
-	 * @param file
-	 *            javascript genetic script.
-	 * @throws FileNotFoundException
-	 * @throws ScriptException
-	 * @since v0.1.0
-	 */
-	private void initScriptEngine(File file) throws FileNotFoundException, ScriptException {
-		debug("init script engine");
-		ScriptEngineManager sem = new ScriptEngineManager();
-		engine = sem.getEngineByName("JavaScript");
-
-		/*
-		 * add the variables BREAK and database to the Scripts global variables.
-		 * This is a link of sorts. changes made here affect the variables in
-		 * the Script, changes to the variables in the Script affect the
-		 * variables here.
-		 */
-		engine.put("BREAK", BREAK);
-		engine.put("db", database);
-
-		engine.eval(new FileReader(file));
-		inv = (Invocable) engine;
+		verbose("\nOutput:");
+		engine.inv.invokeFunction("output");
 	}
 
 	/**
@@ -207,7 +200,7 @@ public class GAFramework {
 	 *            debug message to output.
 	 * @since v0.1.0
 	 */
-	private static void debug(String string) {
+	public static void debug(String string) {
 		if (DEBUG) {
 			System.out.println("[DEBUG] " + string);
 		}
@@ -220,8 +213,7 @@ public class GAFramework {
 	 *            message to output.
 	 * @since v0.1.0
 	 */
-	@SuppressWarnings("unused")
-	private static void verbose(String string) {
+	public static void verbose(String string) {
 		if (VERBOSE) {
 			System.out.println(string);
 		}
@@ -233,6 +225,23 @@ public class GAFramework {
 	 * @since v0.1.0
 	 */
 	public static void printHelp() {
+		printLicense();
 		System.out.println("GAFramework <Framework Script> <Database> <Generations> <Chromosomes/Pool>");
+	}
+	
+	/**
+	 * @since v0.2.0
+	 */
+	public static void printLicense(){
+		System.out.println("GAFramework  Copyright (C) 2017 Oliver Strik");
+		System.out.println("This program comes with ABSOLUTELY NO WARRANTY; for details type `GAFramework -w'.");
+		System.out.println(
+				"This is free software, and you are welcome to redistribute it under certain conditions; type `GAFramework -c' for details.\n");
+	}
+	
+	public static void testing() throws SQLException{
+		Statement statement = database.createStatement();
+		ResultSet table = statement.executeQuery("SELECT * FROM CITIES");
+		table.absolute(1);
 	}
 }
