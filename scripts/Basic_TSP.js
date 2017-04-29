@@ -17,7 +17,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with GAFramework.  If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 //statement and table initalisations.
 var statement;
 var VERTS;
@@ -47,6 +47,113 @@ function init(){
 	}
 }
 
+// init pool function.
+function initPool(poolSize){
+  /* generate the chromosome pool by creating an array of all the cities then shuffling them. */
+	for(var i = 0; i < poolSize; i++){
+		var genes = [];
+		for(var j = 0; j < verts.length; j++){
+			genes.push(j);
+    }
+		shuffle(genes);
+    fitness(genes);
+		pool.push(genes);
+	}
+
+  /* Calculate number of elites, must be more than 0 */
+  elites = Math.floor(((5/100)*poolSize));
+  if(elites == 0)elites++;
+
+  /* Calculate the inital average pool fitness */
+  var tFit = 0.0;
+  for(var i = 0; i < poolSize; i++){
+		tFit += pool[i][verts.length];
+	}
+  avPool = tFit/poolSize;
+}
+
+// loop function
+function loop(){
+    breed();
+}
+
+// breed function.
+function breed(){
+  /* sort the pool lowest to highest */
+  pool.sort(function(a, b){return a[verts.length]-b[verts.length]});
+
+  ////
+  if(leet.length == 0){
+    leet = pool[0];
+  }
+  else if(leet[verts.length] != pool[0][verts.length]){
+    leet = pool[0];
+    leetChanges++;
+  };
+  ////
+
+
+  var l = pool.length;
+  var prob = [];
+	var tFit = 0.0;
+  /* Calculate total fitness */
+	for(var i = 0; i < l; i++){
+		tFit += pool[i][verts.length];
+	}
+  /* calculate the inverse probability */
+	for(i = 0; i < l; i++){
+    prob.push((pool[i][verts.length]/tFit));
+  }
+  /* reverse sort the probability */
+  prob.sort(function(a, b){return b[verts.length]-a[verts.length]});
+  /* init the pool to replace the nleets. */
+  var nPool = [];
+
+  while(nPool.length < pool.length-elites){
+    /* init parents and chidren */
+    var parentA = pool[selectParent(prob)];
+    var parentB = pool[selectParent(prob)];
+    var childA = [];
+    var childB = [];
+
+    /* get two random indexes for the route part of the chromosome, sort them lowest to highest */
+    rand = [Math.floor(Math.random()*verts.length), Math.floor(Math.random()*verts.length)];
+    rand.sort(function(a, b){return a-b});
+    /* clone parents into children */
+    childA = parentA.slice(0, verts.length);
+    childB = parentB.slice(0, verts.length);
+
+    /* then crossover ;) */
+    var x, y;
+    for(var r = rand[0]; r <= rand[1]; r++){
+      x = parentB[r];
+      y = parentA[r];
+      childA.splice(childA.indexOf(x), 1);
+      childB.splice(childB.indexOf(y), 1);
+    }
+    for(r = rand[0]; r <= rand[1]; r++){
+      x = parentB[r];
+      y = parentA[r];
+      childA.splice(r, 0, x);
+      childB.splice(r, 0, y);
+    }
+
+    /* double check there's enough room in the npool */
+    if(nPool.length < pool.length-elites){
+      nPool.push(childA);
+    }
+    if(nPool.length < pool.length-elites){
+      nPool.push(childB);
+    }
+  }
+  /* run mutate, fitness, then push the npool chromosomes to the pool */
+  for(i = 0; i < pool.length-elites; i++){
+    chromo = nPool[i];
+    mutate(chromo);
+    fitness(chromo);
+    pool[i+elites] = chromo;
+  }
+}
 /* the shift mutate function. */
 function shiftMutate(chromo){
   /* declare variables */
@@ -61,6 +168,36 @@ function shiftMutate(chromo){
   old = chromo[m];
   chromo[m] = chromo[n];
   chromo[n] = old;
+}
+
+// validity function.
+function validate(chromo){
+  /* indexof requests the index of first occurance of the value given, else it returns -1;
+   * as a chromosome must contain all the verts to be valid; it should never return -1.
+   * if it does, it's invalid.
+   */
+  for(var j = 0; j < chromo.length-1; j++){
+    if(chromo.indexOf(j) == -1){
+      return false;
+    }
+  }
+  return true;
+}
+
+/* fitness function.
+ * fitness is simply the total of the chromosomes suggested solution. if the chromosome
+ * is invaid, rather than removing it, increase its total distance to ///twice/// the average of the inital pool.
+ */
+function fitness(chromo){
+  if(!validate(chromo)){
+    var penalty = 2;
+    chromo.push(Math.floor(penalty*avPool));
+  }
+  var dist = distance(chromo[0], chromo[chromo.length-1]);
+  for(var i = 0; i < chromo.length-1; i++){
+    dist += distance(chromo[i], chromo[i+1]);
+  }
+  chromo.push(dist);
 }
 
 /* shuffles the given array */
@@ -101,7 +238,9 @@ function distance(a, b){
 	var dy = y[a] - y[b];
 	return Math.sqrt(Math.pow(dx, 2)+Math.pow(dy, 2));
 }
-function getParent(prob){
+
+/* returns the index of the parent give the probability. */
+function selectParent(prob){
   var rand = Math.random();
   for(i = 0; i < pool.length; i++){
     rand-=prob[i];
@@ -112,6 +251,7 @@ function getParent(prob){
   return pool.length-1;
 }
 
+/* returns the chromosome with verts indexes replaced with the names from verts */
 function chromo2text(chromo){
   var str = "";
   for(var i = 0; i < verts.length-1; i++){
@@ -121,143 +261,6 @@ function chromo2text(chromo){
   return str;
 }
 
-// validity function.
-function validate(chromo){
-  /* indexof requests the index of first occurance of the value given, else it returns -1;
-   * as a chromosome must contain all the verts to be valid; it should never return -1.
-   * if it does, it's invalid.
-   */
-  for(var j = 0; j < chromo.length-1; j++){
-    if(chromo.indexOf(j) == -1){
-      return false;
-    }
-  }
-  return true;
-}
-
-// init pool function.
-function initPool(poolSize){
-  /* generate the chromosome pool by creating an array of all the cities then shuffling them. */
-	for(var i = 0; i < poolSize; i++){
-		//TODO check.
-		var genes = [];
-		for(var j = 0; j < verts.length; j++){
-			genes.push(j);
-		}
-		//TODO check.
-		var chromo = [];
-		shuffle(genes);
-		for(j = 0; j < genes.length; j++){
-			chromo.push(genes[j]);
-		}
-    fitness(chromo);
-		pool.push(chromo);
-	}
-  //
-  elites = Math.floor(((5/100)*poolSize));
-  if(elites == 0)elites++;
-  var tFit = 0.0;
-  for(var i = 0; i < poolSize; i++){
-		tFit += pool[i][verts.length];
-	}
-  avPool = tFit/poolSize;
-}
-
-/* fitness function.
- * fitness is simply the total of the chromosomes suggested solution. if the chromosome
- * is invaid, rather than removing it, increase its total distance to ///twice/// the average of the inital pool.
- */
-function fitness(chromo){
-  if(!validate(chromo)){
-    var penalty = 2;
-    chromo.push(Math.floor(penalty*avPool));
-  }
-  var dist = distance(chromo[0], chromo[chromo.length-1]);
-  for(var i = 0; i < chromo.length-1; i++){
-    dist += distance(chromo[i], chromo[i+1]);
-  }
-  chromo.push(dist);
-
-
-	/*fit.length = 0;
-	var penalty = 1;
-	for(var j = 0; j < pool.length; j++){
-		var chromo = pool[j];
-		if(!validate(chromo)){
-      var penalty = 2;
-			fit.push(Math.floor(penalty*avPool));
-		}
-		var dist = distance(chromo[0], chromo[chromo.length-1]);
-		for(var i = 0; i < chromo.length-1; i++){
-			dist += distance(chromo[i], chromo[i+1]);
-		}
-		fit.push(dist);
-	}*/
-  /* sort lowest to highest */
-}
-
-// breed function.
-function breed(){
-  pool.sort(function(a, b){return a[verts.length]-b[verts.length]});
-  if(leet.length == 0){
-    leet = pool[0];
-  }
-  else if(leet[verts.length] != pool[0][verts.length]){
-    leet = pool[0];
-    leetChanges++;
-  };
-  var l = pool.length;
-  var prob = [];
-	var tFit = 0.0;
-	for(var i = 0; i < l; i++){
-		tFit += pool[i][verts.length];
-	}
-	for(i = 0; i < l; i++){
-    prob.push((pool[i][verts.length]/tFit));
-  }
-  prob.sort(function(a, b){return b[verts.length]-a[verts.length]});
-  nPool = [];
-  while(nPool.length < pool.length-elites){
-    var parentA, parentB;
-    //
-    parentA = pool[getParent(prob)];
-    parentB = pool[getParent(prob)];
-    //
-
-    var childA = [];
-    var childB = [];
-
-    rand = [Math.floor(Math.random()*verts.length), Math.floor(Math.random()*verts.length)];
-    rand.sort(function(a, b){return a-b});
-    childA = parentA.slice(0, verts.length);
-    childB = parentB.slice(0, verts.length);
-    var x, y;
-    for(var r = rand[0]; r <= rand[1]; r++){
-      x = parentB[r];
-      y = parentA[r];
-      childA.splice(childA.indexOf(x), 1);
-      childB.splice(childB.indexOf(y), 1);
-    }
-    for(r = rand[0]; r <= rand[1]; r++){
-      x = parentB[r];
-      y = parentA[r];
-      childA.splice(r, 0, x);
-      childB.splice(r, 0, y);
-    }
-    if(nPool.length < pool.length-elites){
-      nPool.push(childA);
-    }
-    if(nPool.length < pool.length-elites){
-      nPool.push(childB);
-    }
-  }
-  for(i = 0; i < pool.length-elites; i++){
-    chromo = nPool[i];
-    mutate(chromo);
-    fitness(chromo);
-    pool[i+elites] = chromo;
-  }
-}
 // mutate function.
 function mutate(chromo){
   var r = Math.random();
@@ -265,13 +268,9 @@ function mutate(chromo){
     shiftMutate(chromo);
   }
 }
-function loop(){
-    breed();
-}
 
 // end function for output.
 function output(){
-    bob();
     pool.sort(function(a, b){return a[verts.length]-b[verts.length]});
     print("Optimum changed: " + leetChanges + " times.");
     print(chromo2text(pool[0]));
