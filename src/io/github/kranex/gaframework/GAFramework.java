@@ -26,12 +26,8 @@
 package io.github.kranex.gaframework;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -39,7 +35,7 @@ import java.util.List;
 
 import javax.script.ScriptException;
 
-import io.github.kranex.gaframework.database.DatabaseUtils;
+import io.github.kranex.gaframework.data.Table;
 import io.github.kranex.gaframework.engine.Engine;
 
 /**
@@ -56,20 +52,42 @@ public class GAFramework {
 
 	private static Engine engine;
 	/* declaration for the database. */
-	public static Connection database;
-
+	//public static Connection database;
+	public static Table table;
 	/* initialization of the framework script break boolean. */
 	public static boolean BREAK = false;
-
+	
 	/* start of the java program. */
 	public static void main(String[] args) throws NumberFormatException, ScriptException,
 			ClassNotFoundException, SQLException, NoSuchMethodException, IOException {
-		
+		List<String> arguments;
 		/* Deal with arguments */
-		List<String> arguments = new LinkedList<String>(Arrays.asList(args));
+		if(args.length == 1){
+			arguments = new LinkedList<String>(Arrays.asList(args[0].split(" ")));
+		}else{
+			arguments = new LinkedList<String>(Arrays.asList(args));
+		}
+
 		List<Integer> remove = new ArrayList<Integer>();
 		if(!arguments.contains("-q"))printLicense();
+		boolean inSpeech = false;
+		int speechIndex = 0;
 		for (int i = 0; i < arguments.size(); i++) {
+			if(arguments.contains("\"")){
+				inSpeech = !inSpeech;	
+				speechIndex = i;
+			}
+			if(arguments.contains("'")){
+				inSpeech = !inSpeech;	
+				speechIndex = i;
+			}
+			if(inSpeech){
+				if(speechIndex != i){
+					arguments.set(speechIndex, arguments.get(speechIndex) + " " + arguments.get(i));
+					remove.add(i);
+				}
+				continue;
+			}
 			switch (arguments.get(i)) {
 			case "-w":
 				System.out.println(
@@ -100,15 +118,21 @@ public class GAFramework {
 		}
 		try {
 			/* initialize database. */
-			debug("starting database...");
-			database = DatabaseUtils.createDatabaseConnection(arguments.get(1));
+			//debug("starting database...");
+			//database = DatabaseUtils.createDatabaseConnection(arguments.get(1));
+			if(arguments.get(1).endsWith(".txt")){
+				table = new Table(new File(arguments.get(1)));
+				verbose("Table Loaded.");
+			}else{
+				System.out.println("Error, please supply txt table");
+			}
 			/* starts the GASolver program. */
 			verbose("Initalising GAFramework...");
 			new GAFramework(new File(arguments.get(0)), Integer.parseInt(arguments.get(2)), Integer.parseInt(arguments.get(3)));
 
-			debug("closing database connection...");
+			//debug("closing database connection...");
 			/* shuts down the database. */
-			database.close();
+			//database.close();
 		} catch (ArrayIndexOutOfBoundsException e) {
 			/* this happens if not enough arguments are given to the program. */
 			System.out.println("[ERROR] Not enough arguments. Usage:");
@@ -133,7 +157,8 @@ public class GAFramework {
 	 */
 	public GAFramework(File file, int itter, int poolSize)
 			throws ScriptException, SQLException, NoSuchMethodException, IOException {
-
+		Long initTime = System.currentTimeMillis();
+		Long passedTime;
 		/* calls the javascript initalisation method. */
 		engine = new Engine(file);
 		
@@ -151,10 +176,11 @@ public class GAFramework {
 		engine.inv.invokeFunction("initPool", poolSize);
 		boolean debugElite = true;
 		for (int i = 0; i < itter; i++) {
-			if(itter >=20){
-				if(i%(itter/20) == 0){
+			passedTime = System.currentTimeMillis()-initTime;
+			if(itter >=100){
+				if(i%(itter/100) == 0){
 					if(VERBOSE){
-							System.out.print("\r" + ((int)((((double)i)/(double)itter)*100.0) + "% "));
+							System.out.print("\r" + (int)((((double)i)/(double)itter)*100.0) + "% " + String.format("%.2f",(float)((float)(itter-i)*((float)passedTime/(float)(i+1)))/60000f) + "  ");
 					}
 				}
 			}
@@ -184,6 +210,8 @@ public class GAFramework {
 			if (BREAK) {
 				break;
 			}
+			// time passed, current itteration. time for one itteration, time left from 
+		
 		}
 		/*
 		 * invoke the output function to output the final solution or other
@@ -239,9 +267,9 @@ public class GAFramework {
 				"This is free software, and you are welcome to redistribute it under certain conditions; type `GAFramework -c' for details.\n");
 	}
 	
-	public static void testing() throws SQLException{
-		Statement statement = database.createStatement();
-		ResultSet table = statement.executeQuery("SELECT * FROM CITIES");
-		table.absolute(1);
-	}
+//	public static void testing() throws SQLException{
+//		Statement statement = database.createStatement();
+//		ResultSet table = statement.executeQuery("SELECT * FROM CITIES");
+//		table.absolute(1);
+//	}
 }

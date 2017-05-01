@@ -18,9 +18,6 @@
  *  along with GAFramework.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * 
- */
 package io.github.kranex.gaframework.database;
 
 import java.sql.Connection;

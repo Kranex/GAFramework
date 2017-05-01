@@ -74,11 +74,6 @@ function initPool(poolSize){
 
 // loop function
 function loop(){
-    breed();
-}
-
-// breed function.
-function breed(){
   /* sort the pool lowest to highest */
   pool.sort(function(a, b){return a[verts.length]-b[verts.length]});
 
@@ -95,27 +90,41 @@ function breed(){
 
   var l = pool.length;
   var prob = [];
-	var tFit = 0.0;
+  var tFit = 0.0;
   /* Calculate total fitness */
-	for(var i = 0; i < l; i++){
-		tFit += pool[i][verts.length];
-	}
+  for(var i = 0; i < l; i++){
+    tFit += pool[i][verts.length];
+  }
   /* calculate the inverse probability */
-	for(i = 0; i < l; i++){
+  for(i = 0; i < l; i++){
     prob.push((pool[i][verts.length]/tFit));
   }
   /* reverse sort the probability */
   prob.sort(function(a, b){return b[verts.length]-a[verts.length]});
   /* init the pool to replace the nleets. */
-  var nPool = [];
+  var nPool = crossover(prob);
+  /* run mutate, fitness, then push the npool chromosomes to the pool */
+  for(i = 0; i < pool.length-elites; i++){
+    chromo = nPool[i];
+    mutate(chromo);
+    fitness(chromo);
+    pool[i+elites] = chromo;
+  }
+}
 
+/* crossover function */
+function crossover(prob){
+  var nPool = [];
   while(nPool.length < pool.length-elites){
     /* init parents and chidren */
     var parentA = pool[selectParent(prob)];
     var parentB = pool[selectParent(prob)];
     var childA = [];
     var childB = [];
-
+        ..
+    // [4,5,3,0,1,5]
+    // 012345
+    // 214350
     /* get two random indexes for the route part of the chromosome, sort them lowest to highest */
     rand = [Math.floor(Math.random()*verts.length), Math.floor(Math.random()*verts.length)];
     rand.sort(function(a, b){return a-b});
@@ -146,13 +155,7 @@ function breed(){
       nPool.push(childB);
     }
   }
-  /* run mutate, fitness, then push the npool chromosomes to the pool */
-  for(i = 0; i < pool.length-elites; i++){
-    chromo = nPool[i];
-    mutate(chromo);
-    fitness(chromo);
-    pool[i+elites] = chromo;
-  }
+  return nPool;
 }
 /* the shift mutate function. */
 function shiftMutate(chromo){
