@@ -49,15 +49,11 @@ public class Table {
 		while((line = reader.readLine()) != null){
 			if(columns == null){
 				columns = new ArrayList<String>(Arrays.asList(line.replaceAll("/t", "").split(" ")));
-				GAFramework.debug("cols:" + columns.size());
 				columns.removeAll(Arrays.asList("", null));
-				GAFramework.debug("cols:" + columns.size());
 				continue;
 			}
 			List<String> row = new ArrayList<String>(Arrays.asList(line.replaceAll("/t", "").split(" ")));
-			GAFramework.debug("row:" + row.size());
 			row.removeAll(Arrays.asList("", null));
-			GAFramework.debug("row:" + row.size());
 			rows.add(row.get(0));
 			row.remove(0);
 			rowz.add(row.toArray(new String[row.size()]));

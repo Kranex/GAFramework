@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -41,7 +42,7 @@ import io.github.kranex.gaframework.engine.Engine;
 /**
  * @author Oliver Strik oliverstrik@gmail.com
  * 
- * @version v0.2.0
+ * @version v0.3.0
  * @since v0.1.0
  */
 public class GAFramework {
@@ -61,6 +62,7 @@ public class GAFramework {
 	public static void main(String[] args) throws NumberFormatException, ScriptException,
 			ClassNotFoundException, SQLException, NoSuchMethodException, IOException {
 		List<String> arguments;
+		String scriptArgs = "";
 		/* Deal with arguments */
 		if(args.length == 1){
 			arguments = new LinkedList<String>(Arrays.asList(args[0].split(" ")));
@@ -68,24 +70,15 @@ public class GAFramework {
 			arguments = new LinkedList<String>(Arrays.asList(args));
 		}
 
-		List<Integer> remove = new ArrayList<Integer>();
 		if(!arguments.contains("-q"))printLicense();
-		boolean inSpeech = false;
-		int speechIndex = 0;
+		
+		List<Integer> remove = new ArrayList<Integer>();
+		
 		for (int i = 0; i < arguments.size(); i++) {
-			if(arguments.contains("\"")){
-				inSpeech = !inSpeech;	
-				speechIndex = i;
-			}
-			if(arguments.contains("'")){
-				inSpeech = !inSpeech;	
-				speechIndex = i;
-			}
-			if(inSpeech){
-				if(speechIndex != i){
-					arguments.set(speechIndex, arguments.get(speechIndex) + " " + arguments.get(i));
-					remove.add(i);
-				}
+			debug(arguments.get(i));
+			if(arguments.get(i).startsWith("-a")){
+				scriptArgs = arguments.get(i).replaceFirst("-a", "");
+				remove.add(i);
 				continue;
 			}
 			switch (arguments.get(i)) {
@@ -113,6 +106,8 @@ public class GAFramework {
 			debug("removing argument: " + arguments.get(i));
 			remove.add(i);
 		}
+		Collections.sort(remove);
+		Collections.reverse(remove);
 		for(int i : remove){
 			arguments.remove(i);
 		}
@@ -128,7 +123,7 @@ public class GAFramework {
 			}
 			/* starts the GASolver program. */
 			verbose("Initalising GAFramework...");
-			new GAFramework(new File(arguments.get(0)), Integer.parseInt(arguments.get(2)), Integer.parseInt(arguments.get(3)));
+			new GAFramework(new File(arguments.get(0)), Integer.parseInt(arguments.get(2)), Integer.parseInt(arguments.get(3)), scriptArgs);
 
 			//debug("closing database connection...");
 			/* shuts down the database. */
@@ -149,13 +144,14 @@ public class GAFramework {
 	 *            # of iterations.
 	 * @param poolSize
 	 *            # of chromosomes in the pool.
+	 * @param scriptArgs 
 	 * @throws ScriptException
 	 * @throws SQLException
 	 * @throws NoSuchMethodException
 	 * @throws IOException 
 	 * @since v0.1.0
 	 */
-	public GAFramework(File file, int itter, int poolSize)
+	public GAFramework(File file, int itter, int poolSize, String scriptArgs)
 			throws ScriptException, SQLException, NoSuchMethodException, IOException {
 		Long initTime = System.currentTimeMillis();
 		Long passedTime;
@@ -167,11 +163,10 @@ public class GAFramework {
 		 * happens.
 		 */
 		try {
-			engine.inv.invokeFunction("init");
+			engine.inv.invokeFunction("init", scriptArgs);
 		} catch (NoSuchMethodException e) {
 			debug("No init function...");
 		}
-
 		/* invoke the initPool function. */
 		engine.inv.invokeFunction("initPool", poolSize);
 		boolean debugElite = true;
@@ -180,7 +175,7 @@ public class GAFramework {
 			if(itter >=100){
 				if(i%(itter/100) == 0){
 					if(VERBOSE){
-							System.out.print("\r" + (int)((((double)i)/(double)itter)*100.0) + "% " + String.format("%.2f",(float)((float)(itter-i)*((float)passedTime/(float)(i+1)))/60000f) + "  ");
+							System.out.print("\r" + (int)((((double)i)/(double)itter)*100.0) + "% " + String.format("%.2f",(itter-i)*((float)passedTime/(float)(i+1))/60000f) + "  ");
 					}
 				}
 			}

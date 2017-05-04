@@ -80,6 +80,7 @@ function loop(){
   ////
   if(leet.length == 0){
     leet = pool[0];
+    print(chromo2text(pool[0]));
   }
   else if(leet[verts.length] != pool[0][verts.length]){
     leet = pool[0];
