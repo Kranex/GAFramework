@@ -1,16 +1,19 @@
 /* script variables */
+var POOLSIZE;
 var pool = [];
 var verts = [];
+var start;
 var cords = false;
 
 var elites;
+var elitep = 10;
 var leet;
 var leetChanges = 0;
 var leetSince=0;
 var gen = 0;
 
 // init data function.
-function init(){
+function init(args){
   /* init the SQL statement object */
 
   /* itterate through the table, adding verts, x and y to the respective arrays */
@@ -18,12 +21,32 @@ function init(){
   if(table.getColumns().size() != table.getRows().size()){
     cords = true;
   }
+  args = (args.slice(1,args.length-1)).split(",");
+  for(i in args){
+    if(args[i].startsWith("start=")){
+      start = args[i].replace("start=", "");
+      if(!verts.contains(start)){
+        start = undefined;
+      }
+      continue;
+    }
+    if(args[i].startsWith("elites=")){
+      elites = parseInt(args[i].replace("elites=", ""));
+      continue;
+    }
+    if(args[i].startsWith("elitep=")){
+      elitep = parseFloat(args[i].replace("elitep=", ""));
+      continue;
+    }
+
+  }
 }
 
 // init pool function.
 function initPool(poolSize){
   /* generate the chromosome pool by creating an array of all the cities then shuffling them. */
-	for(var i = 0; i < poolSize; i++){
+  POOLSIZE = poolSize;
+	for(var i = 0; i < POOLSIZE; i++){
 		var chromo = new Chromosome();
 		for(var j = 0; j < verts.length; j++){
 			chromo.struct.push(j);
@@ -34,15 +57,17 @@ function initPool(poolSize){
 	}
 
   /* Calculate number of elites, must be more than 0 */
-  elites = Math.floor(((10/100)*poolSize));
-  if(elites == 0)elites++;
+  if(elites == undefined){
+    elites = Math.floor(((elitep/100)*POOLSIZE));
+    if(elites == 0)elites++;
+  }
 
   /* Calculate the inital average pool fitness */
   var tFit = 0.0;
-  for(var i = 0; i < poolSize; i++){
+  for(var i = 0; i < POOLSIZE; i++){
 		tFit += pool[i].fitness;
 	}
-  avPool = tFit/poolSize;
+  avPool = tFit/POOLSIZE;
 }
 
 // loop function
@@ -64,19 +89,18 @@ function loop(){
   };
   ////
 
-
-  var l = pool.length;
   var tFit = 0.0;
-  var inv = pool[0].fitness+pool[l-1].fitness;
+  var inv = pool[0].fitness+pool[pool.length-1].fitness;
   /* Calculate total fitness */
-  for(var i = 0; i < l; i++){
+  for(var i = 0; i < pool.length; i++){
 //  print(pool[i].struct);
     tFit += pool[i].fitness;
   }
   /* calculate the inverse probability */
-  for(i = 0; i < l; i++){
+  for(i = 0; i < pool.length; i++){
     pool[i].probability = (inv-pool[i].fitness)/tFit;
   }
+  //preselection();
   /* init the pool to replace the nleets. */
   var nPool = crossover();
   /* run mutate, fitness, then push the npool chromosomes to the pool */
@@ -90,14 +114,14 @@ function loop(){
 /* crossover function */
 function crossover(){
   var nPool = [];
-  while(nPool.length < pool.length-elites){
+  while(nPool.length < POOLSIZE-elites){
     /* init parents and chidren */
     var parentA = pool[selectParent()];
     var parentB = pool[selectParent()];
     var childA =  new Chromosome(parentA);
     var childB = new Chromosome(parentB);
     /* get two random indexes for the route part of the chromosome, sort them lowest to highest */
-    rand = [Math.floor(Math.random()*verts.length), Math.floor(Math.random()*verts.length)];
+    rand = [Math.floor(Math.random()*parentA.struct.length), Math.floor(Math.random()*parentA.struct.length)];
     rand.sort(function(a, b){return a-b});
 
     /* then crossover ;) */
@@ -115,14 +139,27 @@ function crossover(){
       childB.struct.splice(r, 0, y);
     }
     /* double check there's enough room in the npool */
-    if(nPool.length < pool.length-elites){
+    if(nPool.length < POOLSIZE-elites){
       nPool.push(childA);
     }
-    if(nPool.length < pool.length-elites){
+    if(nPool.length < POOLSIZE-elites){
       nPool.push(childB);
     }
   }
   return nPool;
+}
+
+function preselection(){
+  var cFit = 0;
+  for(var i = 0; i < elites; i++){
+    if(pool[i].fitness != cFit){
+      cFit = pool[i].fitness;
+    }else{
+      pool[i-1].probability += pool[i].probability;
+      pool.splice(i,1);
+      i--;
+    }
+  }
 }
 // mutate function.
 function mutate(chromo){
@@ -143,6 +180,10 @@ function output(){
     pool.sort(function(a, b){return a.fitness-b.fitness});
     print("Optimum changed: " + leetChanges + " times. Last change: " + leetSince + " Generations ago.");
     print(chromo2text(pool[0]));
+    //print();
+    //for(var i in pool){
+    //  print(pool[i].struct + ":" + pool[i].fitness);
+    //}
 }
 
 /* fitness function.
@@ -161,20 +202,11 @@ function selectParent(){
   var rand = Math.random();
   for(i = 0; i < pool.length; i++){
     rand-=pool[i].probability;
-    if(rand <=0){
+    if(rand <0){
       return i;
     }
   }
   return pool.length-1;
-}
-/* returns the chromosome with verts indexes replaced with the names from verts */
-function chromo2text(chromo){
-  var str = "";
-  for(var i = 0; i < verts.length-1; i++){
-    str += verts[chromo.struct[i]] + "-";
-  }
-  str+=verts[chromo.struct[verts.length-1]] + ":" + chromo.fitness;
-  return str;
 }
 
 /* calculates distance between two verts using pythagoras */
@@ -185,5 +217,24 @@ function distance(a, b){
     return Math.sqrt(Math.pow(dx, 2)+Math.pow(dy, 2));
   }else{
     return table.getFloat(a,b);
+  }
+}
+/* returns the chromosome with verts indexes replaced with the names from verts */
+function chromo2text(chromo){
+  var str = "";
+  if(start != undefined){
+    rotate(chromo.struct, chromo.struct.indexOf(verts.indexOf(start)));
+  }
+  for(var i = 0; i < chromo.struct.length-1; i++){
+    str += verts[chromo.struct[i]] + "-";
+  }
+  str+=verts[chromo.struct[chromo.struct.length-1]] + ":" + chromo.fitness;
+  return str;
+}
+/* Rotates an array a by a given number of places */
+function rotate( array , places ){
+  while( places-- ){
+    var temp = array.shift();
+    array.push( temp )
   }
 }
