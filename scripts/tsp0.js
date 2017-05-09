@@ -1,5 +1,6 @@
 /* script variables */
 var POOLSIZE;
+var FITNESSONLY = false;
 var pool = [];
 var verts = [];
 var start;
@@ -38,7 +39,10 @@ function init(args){
       elitep = parseFloat(args[i].replace("elitep=", ""));
       continue;
     }
-
+    if(args[i].startsWith("fitnessOnly")){
+      FITNESSONLY = true;
+      continue;
+    }
   }
 }
 
@@ -177,6 +181,10 @@ function mutate(chromo){
 }
 // end function for output.
 function output(){
+    if(FITNESSONLY){
+      print(pool[0].fitness);
+      return;
+    }
     pool.sort(function(a, b){return a.fitness-b.fitness});
     print("Optimum changed: " + leetChanges + " times. Last change: " + leetSince + " Generations ago.");
     print(chromo2text(pool[0]));
@@ -184,6 +192,9 @@ function output(){
     //for(var i in pool){
     //  print(pool[i].struct + ":" + pool[i].fitness);
     //}
+}
+function tableOutput(totalTimeMillis){
+  print(totalTimeMillis/1000 + " " + pool[0].fitness + " " + POOLSIZE);
 }
 
 /* fitness function.
