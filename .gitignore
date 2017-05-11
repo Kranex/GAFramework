@@ -3,4 +3,6 @@
 
 derby.log
 
+bin/
+
 *.jar

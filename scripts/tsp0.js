@@ -23,7 +23,7 @@ function init(args){
     cords = true;
   }
   args = (args.slice(1,args.length-1)).split(",");
-  for(i in args){
+  for(var i in args){
     if(args[i].startsWith("start=")){
       start = args[i].replace("start=", "");
       if(!verts.contains(start)){
@@ -61,14 +61,14 @@ function initPool(poolSize){
 	}
 
   /* Calculate number of elites, must be more than 0 */
-  if(elites == undefined){
+  if(elites === undefined){
     elites = Math.floor(((elitep/100)*POOLSIZE));
-    if(elites == 0)elites++;
+    if(elites === 0)elites++;
   }
 
   /* Calculate the inital average pool fitness */
   var tFit = 0.0;
-  for(var i = 0; i < POOLSIZE; i++){
+  for(i = 0; i < POOLSIZE; i++){
 		tFit += pool[i].fitness;
 	}
   avPool = tFit/POOLSIZE;
@@ -78,7 +78,7 @@ function initPool(poolSize){
 function loop(){
   gen++;
   /* sort the pool lowest to highest */
-  pool.sort(function(a, b){return a.fitness-b.fitness});
+  pool.sort(function(a, b){return a.fitness-b.fitness;});
   leetSince++;
   ////
   if(leet === undefined){
@@ -90,7 +90,7 @@ function loop(){
     leet = pool[0];
     leetChanges++;
     leetSince = 0;
-  };
+  }
   ////
 
   var tFit = 0.0;
@@ -126,7 +126,7 @@ function crossover(){
     var childB = new Chromosome(parentB);
     /* get two random indexes for the route part of the chromosome, sort them lowest to highest */
     rand = [Math.floor(Math.random()*parentA.struct.length), Math.floor(Math.random()*parentA.struct.length)];
-    rand.sort(function(a, b){return a-b});
+    rand.sort(function(a, b){return a-b;});
 
     /* then crossover ;) */
     var x, y;
@@ -185,8 +185,13 @@ function output(){
       print(pool[0].fitness);
       return;
     }
-    pool.sort(function(a, b){return a.fitness-b.fitness});
-    print("Optimum changed: " + leetChanges + " times. Last change: " + leetSince + " Generations ago.");
+    pool.sort(function(a, b){return a.fitness-b.fitness;});
+    var eliteProb = 0;
+    for(i = 0; i < elites; i++){
+      eliteProb += pool[i].probability;
+    }
+    eliteProb = eliteProb * 100;
+    print("Optimum changed: " + leetChanges + " times. Last change: " + leetSince + " Generations ago. Probability of an elite being selected: " + eliteProb);
     print(chromo2text(pool[0]));
     //print();
     //for(var i in pool){
@@ -233,7 +238,7 @@ function distance(a, b){
 /* returns the chromosome with verts indexes replaced with the names from verts */
 function chromo2text(chromo){
   var str = "";
-  if(start != undefined){
+  if(start !== undefined){
     rotate(chromo.struct, chromo.struct.indexOf(verts.indexOf(start)));
   }
   for(var i = 0; i < chromo.struct.length-1; i++){
@@ -246,6 +251,6 @@ function chromo2text(chromo){
 function rotate( array , places ){
   while( places-- ){
     var temp = array.shift();
-    array.push( temp )
+    array.push( temp );
   }
 }
