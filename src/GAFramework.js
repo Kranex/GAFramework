@@ -39,7 +39,7 @@
        this.struct[l-1] = this.struct[r];
        this.struct[r] = o;
      }
-   }
+   };
    /* the shift mutate function. */
    this.shiftMutate = function(){
      /* declare variables */
@@ -54,5 +54,14 @@
      old = this.struct[m];
      this.struct[m] = this.struct[n];
      this.struct[n] = old;
-   }
+   };
+   this.difference = function(chromo){
+     if(!(chromo instanceof Chromosome)){
+       return -1;
+     }
+     var diff = 0;
+     for(i = 0; i < this.struct.length; i++){
+       diff += Math.abs(this.struct[i]-chromo.struct[i]);
+     }
+   };
  }

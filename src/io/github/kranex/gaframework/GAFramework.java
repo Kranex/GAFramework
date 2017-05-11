@@ -50,7 +50,7 @@ public class GAFramework {
 	/* constants for debugging and verbose output. */
 	public static boolean VERBOSE = true;
 	public static boolean DEBUG = false;
-
+	public static int OUTPUT = 0;
 	private static Engine engine;
 	/* declaration for the database. */
 	//public static Connection database;
@@ -99,6 +99,11 @@ public class GAFramework {
 			case "-d":
 				DEBUG = true;
 				debug("enabled.");
+				break;
+			case "-t":
+				OUTPUT = 1;
+				VERBOSE = false;
+				debug("using table output...");
 				break;
 			default:
 				continue;
@@ -208,12 +213,17 @@ public class GAFramework {
 			// time passed, current itteration. time for one itteration, time left from 
 		
 		}
+		passedTime = System.currentTimeMillis()-initTime;
 		/*
 		 * invoke the output function to output the final solution or other
 		 * stuff as required
 		 */
-		verbose("\nOutput:");
-		engine.inv.invokeFunction("output");
+		if(OUTPUT == 0){
+			verbose("\nOutput:");
+			engine.inv.invokeFunction("output");
+		}else if(OUTPUT == 1){
+			engine.inv.invokeFunction("tableOutput", passedTime);
+		}
 	}
 
 	/**
@@ -248,8 +258,20 @@ public class GAFramework {
 	 * @since v0.1.0
 	 */
 	public static void printHelp() {
-		printLicense();
-		System.out.println("GAFramework <Framework Script> <Database> <Generations> <Chromosomes/Pool>");
+		System.out.println("GAFramework <Framework Script> <Database> <Generations> <Chromosomes/Pool> [-chqtw] [-a[{arguments}]]");
+		System.out.println("\nThe Following options are available:");
+		System.out.println("\n-a[{arguments}]");
+		System.out.println("\tThe arguments to pass to the script.");
+		System.out.println("\n-c");
+		System.out.println("\tPrints the conditions of redistribution.");
+		System.out.println("\n-h");
+		System.out.println("\tPrints this help page.");
+		System.out.println("\n-q");
+		System.out.println("\tThe framework is verbose by default, this option mutes everything outside the script.");
+		System.out.println("\n-t");
+		System.out.println("\tIf the script supports it, it will output data with only spaces between. this makes it easier to create tables for scripts.");
+		System.out.println("\n-w");
+		System.out.println("\tPrints the warranty information.");
 	}
 	
 	/**
