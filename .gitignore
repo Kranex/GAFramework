@@ -1,6 +1,10 @@
 
 .DS_Store
 
+.project
+.classpath
+.settings
+
 derby.log
 
 bin/
