@@ -63,5 +63,6 @@
      for(i = 0; i < this.struct.length; i++){
        diff += Math.abs(this.struct[i]-chromo.struct[i]);
      }
+     return diff;
    };
  }
