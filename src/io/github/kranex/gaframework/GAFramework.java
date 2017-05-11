@@ -56,7 +56,7 @@ public class GAFramework {
 	//public static Connection database;
 	public static Table table;
 	/* initialization of the framework script break boolean. */
-	public static boolean BREAK = false;
+	public static int BREAK = 0;
 	
 	/* start of the java program. */
 	public static void main(String[] args) throws NumberFormatException, ScriptException,
@@ -180,7 +180,7 @@ public class GAFramework {
 			if(itter >=100){
 				if(i%(itter/100) == 0){
 					if(VERBOSE){
-							System.out.print("\r" + (int)((((double)i)/(double)itter)*100.0) + "% " + String.format("%.2f",(itter-i)*((float)passedTime/(float)(i+1))/60000f) + "  ");
+							System.out.print("\r" + (int)((((double)i)/(double)itter)*100.0) + "% " + " " + engine.inv.invokeFunction("getLeet") + " " + String.format("%.2f",(itter-i)*((float)passedTime/(float)(i+1))/60000f) + "  ");
 					}
 				}
 			}
@@ -207,7 +207,7 @@ public class GAFramework {
 					}
 				}
 			}
-			if (BREAK) {
+			if (engine.inv.invokeFunction("bob").equals(1)) {
 				break;
 			}
 			// time passed, current itteration. time for one itteration, time left from 
