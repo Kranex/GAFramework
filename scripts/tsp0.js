@@ -254,3 +254,13 @@ function rotate( array , places ){
     array.push( temp );
   }
 }
+function getLeet(){
+  if(leet === undefined){
+      return 0;
+  }else{
+    return leet.fitness;
+  }
+}
+function bob(){
+  return quit;
+}
