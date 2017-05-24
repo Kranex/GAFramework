@@ -109,7 +109,7 @@ function loop(){
   /* Calculate total fitness */
   for(var i = 0; i < pool.length; i++){
     //  print(pool[i].struct);
-    tFit += pool[i].fitness;
+    tFit += inv-pool[i].fitness;
   }
   /* calculate the inverse probability */
   for(i = 0; i < pool.length; i++){

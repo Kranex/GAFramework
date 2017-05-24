@@ -113,7 +113,7 @@ function loop(){
   /* Calculate total fitness */
   for(var i = 0; i < pool.length; i++){
     //  print(pool[i].struct);
-    tFit += pool[i].fitness;
+    tFit += inv-pool[i].fitness;
   }
   /* calculate the inverse probability */
   for(i = 0; i < pool.length; i++){
@@ -231,7 +231,7 @@ function output(){
 }
 function tableOutput(totalTimeMillis){
   var finishTime = Date().now - startTime;
-  print(finishTime + " " + (timeLeet-startTime) + " " + elites + " " + elitep + " " + POOLSIZE + " " + pool[0].fitness);
+  print(finishTime + " " + (timeLeet-startTime) + " " + elitep + " " + POOLSIZE + " " + gen + " " + pool[0].fitness);
 }
 
 /* fitness function.
