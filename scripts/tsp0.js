@@ -98,7 +98,7 @@ function loop(){
   /* Calculate total fitness */
   for(var i = 0; i < pool.length; i++){
 //  print(pool[i].struct);
-    tFit += pool[i].fitness;
+    tFit += inv-pool[i].fitness;
   }
   /* calculate the inverse probability */
   for(i = 0; i < pool.length; i++){
@@ -253,4 +253,14 @@ function rotate( array , places ){
     var temp = array.shift();
     array.push( temp );
   }
+}
+function getLeet(){
+  if(leet === undefined){
+      return 0;
+  }else{
+    return leet.fitness;
+  }
+}
+function bob(){
+  return quit;
 }

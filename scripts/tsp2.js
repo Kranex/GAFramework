@@ -17,6 +17,10 @@ var leetChanges = 0;
 var leetSince=0;
 var gen = 0;
 
+var startTime;
+var timeLeet;
+var finishTime;
+
 // init data function.
 function init(args){
   /* init the SQL statement object */
@@ -58,6 +62,7 @@ function init(args){
 function initPool(poolSize){
   /* generate the chromosome pool by creating an array of all the cities then shuffling them. */
   POOLSIZE = poolSize;
+  startTime = Date().now;
   for(var i = 0; i < POOLSIZE; i++){
     var chromo = new Chromosome();
     for(var j = 0; j < verts.length; j++){
@@ -92,15 +97,14 @@ function loop(){
   if(leet === undefined){
     leet = pool[0];
     leetSince--;
+    timeLeet = Date().now;
   }
   else if(leet.fitness != pool[0].fitness){
 
     leet = pool[0];
     leetChanges++;
     leetSince = 0;
-  }
-  if(leet.fitness == 1406){
-    quit = 1;
+    timeLeet = Date().now;
   }
   ////
 
@@ -226,7 +230,8 @@ function output(){
   //}
 }
 function tableOutput(totalTimeMillis){
-  print(totalTimeMillis/1000 + " " + pool[0].fitness + " " + POOLSIZE);
+  var finishTime = Date().now - startTime;
+  print(finishTime + " " + (timeLeet-startTime) + " " + elitep + " " + POOLSIZE + " " + gen + " " + pool[0].fitness);
 }
 
 /* fitness function.
