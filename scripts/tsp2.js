@@ -1,3 +1,4 @@
+/* Modified Tournement selection. This is tsp1 with better time analysis */
 /* script variables */
 var POOLSIZE;
 var quit = 0;
