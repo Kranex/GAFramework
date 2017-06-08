@@ -12,6 +12,7 @@ var leet;
 var leetChanges = 0;
 var leetSince=0;
 var gen = 0;
+var breakChange = 1000;
 
 // init data function.
 function init(args){
@@ -37,6 +38,10 @@ function init(args){
     }
     if(args[i].startsWith("elitep=")){
       elitep = parseFloat(args[i].replace("elitep=", ""));
+      continue;
+    }
+    if(args[i].startsWith("break=")){
+      breakChange = parseInt(args[i].replace("break=", ""));
       continue;
     }
     if(args[i].startsWith("fitnessOnly")){
@@ -90,6 +95,10 @@ function loop(){
     leet = pool[0];
     leetChanges++;
     leetSince = 0;
+  }
+  if(leetSince > breakChange){
+      print(leetSince > gen*0.50);
+    quit = 1;
   }
   ////
 

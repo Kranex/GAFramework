@@ -1,3 +1,4 @@
+/* Mod Tor Selection */
 /* script variables */
 var POOLSIZE;
 var quit = 0;
