@@ -3,7 +3,7 @@ If you have come here from the research article, the most interesting files are 
 - /scripts/tsp0.js is the genetic algorithm script used in the research. tsp1 and tsp2 are modified versions of this script that were attempts to beat premature convergance.
 - /docs/Sample\ Data/ contains all the distance matrices and coordinate tables that were used in the research.
 - /src/GAFramework.js is the framework that the scripts reference to.
--/src/io/github/kranex/gaframework/ contains the sourcecode for the main framework.
+- /src/io/github/kranex/gaframework/ contains the sourcecode for the main body of the framework.
 
 Genetic Algorithm Framework
 
