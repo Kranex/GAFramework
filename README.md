@@ -1,8 +1,7 @@
 # GAFramework
 If you have come here from the research article, the most interesting files are located as follows:
 - /scripts/tsp0.js is the genetic algorithm script used in the research. tsp1 and tsp2 are modified version of this script that were attempts to beat premature convergance.
-- /docs/sampl
-
+- /docs/Sample\ Data/ contains all the distance matric
 Genetic Algorithm Framework
 
 The Genetic Algorithm Framework is part of my Propaedeutic Project on "Genetic Algorithms and the Traveling Salesman Problem".
